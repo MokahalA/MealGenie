@@ -2,7 +2,7 @@
 
 ## About
 
-A generative AI application that that:
+A generative AI application that does the following:
 - suggests recipes and meal plans based on user dietary preferences and restrictions. 
 - tracks the user's pantry inventory to make more personalized suggestions based on upcoming expiry dates.
 
