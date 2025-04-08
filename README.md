@@ -2,7 +2,7 @@
 
 ## About
 
-Generative AI application built using Django that does the following:
+MealGenie is a generative AI application built using Django & Llama 3.2 that does the following:
 - suggests recipes and meal plans based on user dietary preferences and restrictions. 
 - tracks the user's pantry inventory to make more personalized suggestions based on upcoming expiry dates.
 
