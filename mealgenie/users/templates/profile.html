@@ -1,0 +1,209 @@
+<div class="container">
+    <h1 class="display-4">Profile</h1>
+    <br>
+    <div class="profile-details mt-4">
+        <div class="mb-5">
+            <h5>Personal Information</h5>
+            <br>
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="firstName" placeholder="First Name" value="{{ user.first_name }}" disabled>
+                        <label for="firstName">First Name</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="lastName" placeholder="Last Name" value="{{ user.last_name }}" disabled>
+                        <label for="lastName">Last Name</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <button id="editBtn" class="btn btn-primary" onclick="toggleEdit()">Edit Profile</button>
+                <button id="saveBtn" class="btn btn-success" onclick="updatePersonalInfo()" style="display: none;">Save</button>
+            </div>
+        </div>
+
+        <div class="mb-5">
+            <p class="fs-6 fw-bolder">What are your dietary preferences?</p>
+            <div class="preferences-container" id="preferences">
+                <!-- Loop through all available dietary options -->
+                <button class="preference-btn {% if 'Vegan' in dietary_preferences %}active{% endif %}" data-preference="Vegan">Vegan</button>
+                <button class="preference-btn {% if 'Vegetarian' in dietary_preferences %}active{% endif %}" data-preference="Vegetarian">Vegetarian</button>
+                <button class="preference-btn {% if 'Low-fat' in dietary_preferences %}active{% endif %}" data-preference="Low-fat">Low-fat</button>
+            </div>
+        </div>
+        
+        <div class="mb-5">
+            <p class="fs-6 fw-bolder">Do you have any allergies?</p>
+            <div class="allergies-container" id="allergies">
+                <button class="allergy-btn {% if 'Lactose' in allergies %}active{% endif %}" data-allergy="Lactose">Lactose</button>
+                <button class="allergy-btn {% if 'Peanuts' in allergies %}active{% endif %}" data-allergy="Peanuts">Peanuts</button>
+                <button class="allergy-btn {% if 'Tree Nuts' in allergies %}active{% endif %}" data-allergy="Tree Nuts">Tree Nuts</button>
+                <button class="allergy-btn {% if 'Gluten' in allergies %}active{% endif %}" data-allergy="Gluten">Gluten</button>
+                <button class="allergy-btn {% if 'Shellfish' in allergies %}active{% endif %}" data-allergy="Shellfish">Shellfish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to enable editing of profile fields
+    function toggleEdit() {
+        document.getElementById('firstName').disabled = false;
+        document.getElementById('lastName').disabled = false;
+        document.getElementById('editBtn').style.display = 'none';
+        document.getElementById('saveBtn').style.display = 'inline-block';
+    }
+
+    // Function to save updated first name and last name
+    function updatePersonalInfo() {
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+
+        fetch("profile/", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({ 
+                first_name: firstName, 
+                last_name: lastName 
+            })
+        })
+        .then(async response => {
+            
+            //console.log('Response status:', response.status);
+
+            // Check if response is okay
+            if (!response.ok) {
+                console.error('Error response text:', await response.text());
+                throw new Error('Network response was not ok');
+            }
+
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error("Received content is not JSON");
+            }
+
+            return response.json();
+        })
+        .then(data => {
+            //console.log('Response data:', data);
+            
+            if (data.status === 'success') {
+                console.log('Profile updated successfully.');
+                document.getElementById('firstName').disabled = true;
+                document.getElementById('lastName').disabled = true;
+                document.getElementById('editBtn').style.display = 'inline-block';
+                document.getElementById('saveBtn').style.display = 'none';
+            } else {
+                alert('Error saving profile');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving your profile.');
+        });
+    }
+
+    // Add event listeners for preferences and allergies
+    document.addEventListener('DOMContentLoaded', function() {
+        const preferencesContainer = document.getElementById('preferences');
+        if (preferencesContainer) {
+            preferencesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('preference-btn')) {
+                    e.target.classList.toggle('active');
+                    updatePreferencesData();
+                }
+            });
+        }
+
+        const allergiesContainer = document.getElementById('allergies');
+        if (allergiesContainer) {
+            allergiesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('allergy-btn')) {
+                    e.target.classList.toggle('active');
+                    updateAllergiesData();
+                }
+            });
+        }
+    });
+
+    // Function to update dietary preferences
+    function updatePreferencesData() {
+        const preferences = Array.from(document.querySelectorAll('.preference-btn.active')).map(btn => btn.dataset.preference);
+        
+        //console.log("Selected Preferences:", preferences); // Add this line for debugging
+
+        fetch("profile/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": '{{ csrf_token }}',
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({ 
+                dietary_preferences: preferences 
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Dietary preferences updated successfully.');
+            } else {
+                alert('Error updating dietary preferences');
+            }
+        })
+        .catch(error => {
+            console.error("Error in updating preferences:", error);
+            alert('An error occurred while updating dietary preferences.');
+        });
+    }
+
+    // Function to update allergies
+    function updateAllergiesData() {
+        const allergies = Array.from(document.querySelectorAll('.allergy-btn.active')).map(btn => btn.dataset.allergy);
+
+        fetch("profile/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": '{{ csrf_token }}',
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: JSON.stringify({ 
+                allergies: allergies 
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Allergies updated successfully.');
+            } else {
+                alert('Error updating allergies');
+            }
+        })
+        .catch(error => {
+            console.error("Error in updating allergies:", error);
+            alert('An error occurred while updating allergies.');
+        });
+    }
+</script>
